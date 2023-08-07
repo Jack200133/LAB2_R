@@ -10,6 +10,7 @@ library(ggfortify)
 library(dplyr)
 library(corrplot)
 library(ggplot2)
+library(tseries)
 ```
 
 ```{r}
@@ -125,4 +126,43 @@ plot(aggregate(ts_price,FUN=mean))
 dec.AirPass<-decompose(ts_price)
 plot(dec.AirPass)
 plot(dec.AirPass$seasonal)
+```
+
+Podemos observar Varias cosas dentro de la Composicion de la serie de tiempo:
+
+-   La serie de tiempo tiene una tendencia alsista aunque la pendiente no es muy alta si tienede positivamente con el tiempo
+
+-   La serie de tiempo presenta una estacionalidad de 12 meses
+
+## Determinacion de Estacionariedad
+
+### Estacionariedad en Varianza
+
+```{r}
+# Gráfico de la serie de Diésel
+plot(serie_superior, main="Serie de Tiempo de Diésel")
+
+```
+
+Como se puede observar en la grafica la varianza no es constante y fluctua a traves del tiempo y al no haber datos negativos podemos aplicar una transofrmacion logaritmica.
+
+```{r}
+# Aplicar la transformación logarítmica
+serie_superior_log <- log(serie_superior)
+
+```
+
+### **Determinación de Estacionariedad en Media**
+
+```{r}
+# Prueba ADF para la serie de Diésel
+resultado_adf <- adf.test(serie_superior_log, alternative = "stationary")
+print(resultado_adf)
+```
+
+Como el valor P no es menor a 0.05 se debe hacer la diferencia del valor para poder aceptar la hipotesis nula
+
+```{r}
+adfTest(serie_superior_log)
+adfTest(diff(serie_superior_log))
 ```
