@@ -2,10 +2,42 @@
 title: "LAB2_R"
 ---
 
-## Quarto
+## Analis de los datos
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+```{r echo=FALSE}
+library(forecast)
+library(tseries)
+library(fUnitRoots)
+library(ggfortify)
+library(dplyr)
+```
 
 ```{r}
-1 + 1
+# Lee los archivos CSV
+df1 <- read.csv("Precios2021.csv", sep = ";")
+df2 <- read.csv("Precios2022.csv", sep = ";")
+df3 <- read.csv("Precios2023.csv", sep = ";")
+
+# Concatena los dataframes
+df_concatenado <- bind_rows(df1, df2, df3)
+# Resumen del dataset
+resumen <- summary(df_concatenado)
+
+# Imprimir el resumen
+print(resumen)
+```
+
+```{r}
+# Cambia la columna FECHA a formato fecha
+df_concatenado$FECHA <- as.Date(df_concatenado$FECHA, format = "%d-%b-%y")
+
+
+```
+
+```{r}
+# Resumen del dataset
+resumen <- summary(df_concatenado)
+
+# Imprimir el resumen
+print(resumen)
 ```
