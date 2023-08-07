@@ -122,10 +122,10 @@ abline(reg=lm(serie_superior~time(serie_superior)), col=c("red"))
 ```
 
 ```{r}
-plot(aggregate(ts_price,FUN=mean))
-dec.AirPass<-decompose(ts_price)
-plot(dec.AirPass)
-plot(dec.AirPass$seasonal)
+plot(aggregate(serie_superior,FUN=mean))
+dec.Superior<-decompose(serie_superior)
+plot(dec.Superior)
+plot(dec.Superior$seasonal)
 ```
 
 Podemos observar Varias cosas dentro de la Composicion de la serie de tiempo:
@@ -163,6 +163,33 @@ print(resultado_adf)
 Como el valor P no es menor a 0.05 se debe hacer la diferencia del valor para poder aceptar la hipotesis nula
 
 ```{r}
-adfTest(serie_superior_log)
-adfTest(diff(serie_superior_log))
+# Diferenciación de primera orden
+serie_diesel_diff <- diff(serie_superior_log)
+
+# Puedes repetir la prueba ADF en la serie diferenciada
+resultado_adf_diff <- adf.test(serie_diesel_diff, alternative = "stationary")
+print(resultado_adf_diff)
+```
+
+### Grafico de Autocorrelacion
+
+```{r}
+#Gráfico de autocorrelación
+acf(serie_superior_log,36)
+
+
+```
+
+### Garfico de Autocorrelacion
+
+```{r}
+# funciones de autocorrelación y autocorrelación parcial
+acf(diff(serie_superior_log),36)
+
+```
+
+### Grafico de Autocorrelacion Parcial
+
+```{r}
+pacf(diff(serie_superior_log),760)
 ```
