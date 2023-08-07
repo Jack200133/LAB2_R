@@ -2,14 +2,13 @@
 title: "LAB2_R"
 ---
 
-## Analis de los datos
-
 ```{r echo=FALSE}
 library(forecast)
 library(tseries)
 library(fUnitRoots)
 library(ggfortify)
 library(dplyr)
+library(corrplot)
 ```
 
 ```{r}
@@ -27,9 +26,25 @@ resumen <- summary(df_concatenado)
 print(resumen)
 ```
 
+# Analisis de los datos
+
+## Analisis exploratorio
+
+### Matriz de correlacion
+
+```{r}
+# Calcular la matriz de correlación (excluyendo la columna de fecha)
+correlaciones <- cor(df_concatenado[, -1])
+
+# Crear el corplot
+corrplot(correlaciones, method = "circle")
+```
+
+## Analisis de la series de tiempo
+
 ```{r}
 # Cambia la columna FECHA a formato fecha
-df_concatenado$FECHA <- as.Date(df_concatenado$FECHA, format = "%d-%b-%y")
+df_concatenado$FECHA <- as.Date(df_concatenado$FECHA, format = "%d-%m-%y")
 
 
 ```
@@ -40,4 +55,28 @@ resumen <- summary(df_concatenado)
 
 # Imprimir el resumen
 print(resumen)
+```
+
+```{r}
+
+ts_price <- ts(df_concatenado$Superior,start=c(2021,1,1),frequency = 365 )
+
+class(ts_price)
+start(ts_price)
+end(ts_price)
+frequency(ts_price)
+```
+
+```{r}
+#Ver el ts_price de la serie
+plot(ts_price)
+abline(reg=lm(ts_price~time(ts_price)), col=c("red"))
+
+```
+
+```{r}
+plot(aggregate(ts_price,FUN=mean))
+dec.AirPass<-decompose(ts_price)
+plot(dec.AirPass)
+plot(dec.AirPass$seasonal)
 ```
