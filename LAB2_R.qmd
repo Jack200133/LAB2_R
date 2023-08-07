@@ -9,6 +9,7 @@ library(fUnitRoots)
 library(ggfortify)
 library(dplyr)
 library(corrplot)
+library(ggplot2)
 ```
 
 ```{r}
@@ -40,37 +41,82 @@ correlaciones <- cor(df_concatenado[, -1])
 corrplot(correlaciones, method = "circle")
 ```
 
+Como se puede observar en la grafica del corplot podemos ver que los precios de combustible Super, Regular y Diesel estan muy relacionados entre si teniendo mass de 0.8 de correlacion. Luego el Bunker tambien tiene un poco de relacion con estos precios pero ninguno tiene relacion con el Gas propano (GLP) que esta relacionado con 1 a 1 son su precion en cilindro o Libras.
+
+### Graficos de parejas
+
+```{r}
+
+pairs(df_concatenado[, -1])
+
+ggplot(data = df_concatenado, aes(x = Diesel, y = Superior)) +
+  geom_point() +
+  labs(x = "Diésel", y = "Gasolina Superior", title = "Gráfico de Dispersión entre Diésel y Gasolina Superior")
+```
+
+En el grafico de parejas podemos ver un poco como se comportan las relaciones de las variables siendo los proecios de Super con Diesel y Regular los que una representacion ams lineal tienen.
+
+### Histogramas
+
+```{r}
+ggplot(data = df_concatenado, aes(x = Diesel)) +
+  geom_histogram(binwidth = 0.5) +
+  labs(x = "Diésel", y = "Frecuencia", title = "Histograma de Diésel")
+
+ggplot(data = df_concatenado, aes(x = Superior)) +
+  geom_histogram(binwidth = 0.5) +
+  labs(x = "Gasolina Super", y = "Frecuencia", title = "Histograma de Super")
+
+```
+
 ## Analisis de la series de tiempo
 
 ```{r}
 # Cambia la columna FECHA a formato fecha
 df_concatenado$FECHA <- as.Date(df_concatenado$FECHA, format = "%d-%m-%y")
 
-
 ```
 
 ```{r}
-# Resumen del dataset
-resumen <- summary(df_concatenado)
+# Crear una serie de tiempo para cada variable
+serie_diesel <- ts(df_concatenado$Diesel,start=c(2021,1,1),frequency = 365)
+serie_superior <- ts(df_concatenado$Superior,start=c(2021,1,1),frequency = 365)
 
-# Imprimir el resumen
-print(resumen)
+```
+
+### Analisis series de tiempo
+
+```{r}
+# Por ejemplo, para la serie de diésel
+inicio_diesel <- start(serie_diesel)
+fin_diesel <- end(serie_diesel)
+frecuencia_diesel <- frequency(serie_diesel)
+
+print(inicio_diesel)
+print(fin_diesel)
+print(frecuencia_diesel)
 ```
 
 ```{r}
 
-ts_price <- ts(df_concatenado$Superior,start=c(2021,1,1),frequency = 365 )
+# Por ejemplo, para la serie de diésel
+inicio_superior <- start(serie_superior)
+fin_superior <- end(serie_superior)
+frecuencia_superior <- frequency(serie_superior)
 
-class(ts_price)
-start(ts_price)
-end(ts_price)
-frequency(ts_price)
+print(inicio_superior)
+print(fin_superior)
+print(frecuencia_superior)
 ```
 
+La serie de tiempo para los precios inicia el 1 de enero del 2021 y termina el dia 218 del 2023, osea el 6 de agosto del 2023, ademas que la frecuancia es de 1 año, 365 dias.
+
+### Visualizacion de la serie de tiempo
+
 ```{r}
-#Ver el ts_price de la serie
-plot(ts_price)
-abline(reg=lm(ts_price~time(ts_price)), col=c("red"))
+#Ver el serie_superior de la serie
+plot(serie_superior)
+abline(reg=lm(serie_superior~time(serie_superior)), col=c("red"))
 
 ```
 
