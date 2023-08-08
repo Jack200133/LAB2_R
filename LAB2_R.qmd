@@ -180,6 +180,8 @@ acf(serie_superior_log,36)
 
 ```
 
+El grafo nos dice que no tiene estacionalidad por lo que ahcemos la diferenciacion
+
 ### Garfico de Autocorrelacion
 
 ```{r}
@@ -188,8 +190,58 @@ acf(diff(serie_superior_log),36)
 
 ```
 
+Con Una diferenciacion podemos ver que la grafica si converge
+
 ### Grafico de Autocorrelacion Parcial
 
 ```{r}
 pacf(diff(serie_superior_log),760)
 ```
+
+Al observar la autocorrelacion parcial de la serie de tiempo podemos ver que converge en 1 y obtenemos que la p puede ser 1
+
+## Modelos de Arima
+
+### Auto Arima
+
+```{r}
+modelo_auto_arima <- auto.arima(serie_superior_log)
+
+# Ajustar el modelo
+fit <- arima(serie_superior_log, c(0, 1, 1), seasonal = list(order = c(0, 1, 1), period = 12))
+
+# Predecir 10 años adelante (asumiendo una frecuencia mensual)
+pred <- predict(fit, n.ahead = 10*12)
+
+# Graficar la serie original y las predicciones
+ts.plot(serie_superior_log, exp(pred$pred), log = "y", lty = c(1,3))
+
+# Ajustar el modelo
+fit2 <- arima(serie_superior_log, c(2, 1, 1), seasonal = list(order = c(0, 1, 0), period = 12))
+
+# Predecir 120 periodos adelante (asumiendo una frecuencia mensual)
+forecastAP <- forecast(fit2, level = c(95), h = 120)
+
+# Graficar las predicciones
+autoplot(forecastAP)
+
+```
+
+### Modelo con Arima (p=1,d=1,q=0)
+
+```{r}
+# Ajustar el modelo ARIMA(1,1,0)
+modelo_arima_110 <- arima(serie_superior_log, order = c(1, 1, 0))
+
+summary(modelo_arima_110)
+
+# Resumen del modelo
+summary(modelo_arima_110)
+
+# Predicciones (opcional)
+predicciones_arima_110 <- forecast(modelo_arima_110, h = 10) # 10 periodos adelante
+plot(predicciones_arima_110)
+
+```
+
+`arima 1,0,0,2,1,0,12`
