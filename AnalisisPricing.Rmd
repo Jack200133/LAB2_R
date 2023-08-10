@@ -258,3 +258,21 @@ predicciones_arima_110 <- forecast(modelo_arima_110, h = 10) # 10 periodos adela
 plot(predicciones_arima_110)
 #arima 1,0,0,2,1,0,12
 ```
+
+### Residuos de Arimas
+
+```{r}
+checkresiduals(modelo_auto_arima)
+checkresiduals(modelo_arima_110)
+
+```
+
+### AIC y BIC
+
+```{r}
+modelos <- list(modelo_auto_arima, modelo_arima_110)
+comparacion <- sapply(modelos, function(x) c(AIC = AIC(x), BIC = BIC(x)))
+comparacion <- t(comparacion)
+print(comparacion)
+
+```
