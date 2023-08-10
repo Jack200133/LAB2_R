@@ -1,0 +1,260 @@
+---
+title: "Analisis y Arima Pricing"
+author: "Juan Angel Carrera"
+date: "2023-08-09"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r, echo=FALSE, include=FALSE}
+options(warn = -1)
+library(forecast)
+library(tseries)
+library(fUnitRoots)
+library(ggfortify)
+library(dplyr)
+library(corrplot)
+library(ggplot2)
+library(tseries)
+options(warn = 0)
+```
+
+```{r}
+# Lee los archivos CSV 
+df1 <- read.csv("Precios2021.csv", sep = ";") 
+df2 <- read.csv("Precios2022.csv", sep = ";") 
+df3 <- read.csv("Precios2023.csv", sep = ";")  
+# Concatena los dataframes 
+df_concatenado <- bind_rows(df1, df2, df3) 
+
+```
+
+# Analisis de los datos
+
+## Analisis exploratorio
+
+```{r}
+# Resumen del dataset 
+resumen <- summary(df_concatenado)  
+# Imprimir el resumen 
+print(resumen)
+```
+
+Tenemos que el precio del Combustible Superior va desde 21.91 a 43.24 en su punto mas alto representando un 75% estab debajo de 35.57. El Conmbustible Regula esta Arriba de 21.11 y la media esta alrededor de 31.21. El Diesel esta dentro de 17.61 hasta un maximo de 41.27
+
+### Matriz de correlacion
+
+```{r}
+# Calcular la matriz de correlación (excluyendo la columna de fecha)
+correlaciones <- cor(df_concatenado[, -1])
+
+# Crear el corplot
+corrplot(correlaciones, method = "circle")
+```
+
+Como se puede observar en la grafica del corplot podemos ver que los precios de combustible Super, Regular y Diesel estan muy relacionados entre si teniendo mass de 0.8 de correlacion. Luego el Bunker tambien tiene un poco de relacion con estos precios pero ninguno tiene relacion con el Gas propano (GLP) que esta relacionado con 1 a 1 son su precion en cilindro o Libras.
+
+### Graficos de parejas
+
+```{r}
+
+pairs(df_concatenado[, -1])
+
+ggplot(data = df_concatenado, aes(x = Diesel, y = Superior)) +
+  geom_point() +
+  labs(x = "Diésel", y = "Gasolina Superior", title = "Gráfico de Dispersión entre Diésel y Gasolina Superior")
+```
+
+En el grafico de parejas podemos ver un poco como se comportan las relaciones de las variables siendo los proecios de Super con Diesel y Regular los que una representacion ams lineal tienen.
+
+### Histogramas
+
+```{r}
+ggplot(data = df_concatenado, aes(x = Diesel)) +
+  geom_histogram(binwidth = 0.5) +
+  labs(x = "Diésel", y = "Frecuencia", title = "Histograma de Diésel")
+
+```
+
+Podemos observar en el histograma deel Disel que su distribucion no es normal y tiende a variar bastante
+
+```{r}
+ggplot(data = df_concatenado, aes(x = Superior)) +
+  geom_histogram(binwidth = 0.5) +
+  labs(x = "Gasolina Super", y = "Frecuencia", title = "Histograma de Super")
+```
+
+Al igual que el diesel, la gasolina super no tiene una distribucion normal pero tiende a dos numeros que son alrededor de 28 y 34
+
+## Analisis de la series de tiempo
+
+```{r}
+# Cambia la columna FECHA a formato fecha
+df_concatenado$FECHA <- as.Date(df_concatenado$FECHA, format = "%d-%m-%y")
+
+```
+
+```{r}
+# Crear una serie de tiempo para cada variable
+serie_diesel <- ts(df_concatenado$Diesel,start=c(2021,1,1),frequency = 365)
+serie_superior <- ts(df_concatenado$Superior,start=c(2021,1,1),frequency = 365)
+```
+
+### Analisis series de tiempo
+
+```{r}
+# Por ejemplo, para la serie de diésel
+inicio_diesel <- start(serie_diesel)
+fin_diesel <- end(serie_diesel)
+frecuencia_diesel <- frequency(serie_diesel)
+
+print(inicio_diesel)
+print(fin_diesel)
+print(frecuencia_diesel)
+```
+
+```{r}
+
+# Por ejemplo, para la serie de Gasolina Superio
+inicio_superior <- start(serie_superior)
+fin_superior <- end(serie_superior)
+frecuencia_superior <- frequency(serie_superior)
+
+print(inicio_superior)
+print(fin_superior)
+print(frecuencia_superior)
+```
+
+La serie de tiempo para los precios inicia el 1 de enero del 2021 y termina el dia 218 del 2023, osea el 6 de agosto del 2023, ademas que la frecuancia es de 1 año, 365 dias.
+
+### Visualizacion de la serie de tiempo
+
+```{r}
+#Ver el serie_superior de la serie
+plot(serie_superior)
+abline(reg=lm(serie_superior~time(serie_superior)), col=c("red"))
+```
+
+```{r}
+plot(aggregate(serie_superior,FUN=mean))
+dec.Superior<-decompose(serie_superior)
+plot(dec.Superior)
+plot(dec.Superior$seasonal)
+```
+
+Podemos observar Varias cosas dentro de la Composicion de la serie de tiempo:
+
+-   La serie de tiempo tiene una tendencia alsista aunque la pendiente no es muy alta si tienede positivamente con el tiempo
+
+-   La serie de tiempo presenta una estacionalidad de 12 meses
+
+## Determinacion de Estacionariedad
+
+### Estacionariedad en Varianza
+
+```{r}
+# Gráfico de la serie de Diésel
+plot(serie_superior, main="Serie de Tiempo de Diésel")
+```
+
+Como se puede observar en la grafica la varianza no es constante y fluctua a traves del tiempo y al no haber datos negativos podemos aplicar una transofrmacion logaritmica.
+
+```{r}
+# Aplicar la transformación logarítmica
+serie_superior_log <- log(serie_superior)
+```
+
+### **Determinación de Estacionariedad en Media**
+
+```{r}
+# Prueba ADF para la serie de Diésel
+resultado_adf <- adf.test(serie_superior_log, alternative = "stationary")
+print(resultado_adf)
+```
+
+Como el valor P no es menor a 0.05 se debe hacer la diferencia del valor para poder aceptar la hipotesis nula
+
+```{r}
+# Diferenciación de primera orden
+serie_diesel_diff <- diff(serie_superior_log)
+
+# Puedes repetir la prueba ADF en la serie diferenciada
+resultado_adf_diff <- adf.test(serie_diesel_diff, alternative = "stationary")
+print(resultado_adf_diff)
+```
+
+### Grafico de Autocorrelacion
+
+```{r}
+#Gráfico de autocorrelación
+acf(serie_superior_log,36)
+
+  
+```
+
+El grafo nos dice que no tiene estacionalidad por lo que ahcemos la diferenciacion
+
+### Garfico de Autocorrelacion
+
+```{r}
+# funciones de autocorrelación y autocorrelación parcial
+acf(diff(serie_superior_log),36)
+```
+
+Con Una diferenciacion podemos ver que la grafica si converge
+
+### Grafico de Autocorrelacion Parcial
+
+```{r}
+pacf(diff(serie_superior_log),760)
+```
+
+Al observar la autocorrelacion parcial de la serie de tiempo podemos ver que converge en 1 y obtenemos que la p puede ser 1
+
+## Modelos de Arima
+
+### Auto Arima
+
+```{r}
+modelo_auto_arima <- auto.arima(serie_superior_log)
+
+# Ajustar el modelo
+fit <- arima(serie_superior_log, c(0, 1, 1), seasonal = list(order = c(0, 1, 1), period = 12))
+
+# Predecir 10 meses adelante (asumiendo una frecuencia diaria)
+pred <- predict(fit, n.ahead = 10*12)
+
+# Graficar la serie original y las predicciones
+#ts.plot(serie_superior_log, exp(pred$pred), log = "y", lty = c(1,3))
+
+# Ajustar el modelo
+fit2 <- arima(serie_superior_log, c(2, 1, 1), seasonal = list(order = c(0, 1, 0), period = 12))
+
+# Predecir 120 periodos adelante (asumiendo una frecuencia mensual)
+forecastAP <- forecast(fit2, level = c(95), h = 120)
+
+# Graficar las predicciones
+autoplot(forecastAP)
+```
+
+### Modelo con Arima (p=1,d=1,q=0)
+
+```{r}
+# Ajustar el modelo ARIMA(1,1,0)
+modelo_arima_110 <- arima(serie_superior_log, order = c(1, 1, 0))
+
+summary(modelo_arima_110)
+
+# Resumen del modelo
+summary(modelo_arima_110)
+
+# Predicciones (opcional)
+predicciones_arima_110 <- forecast(modelo_arima_110, h = 10) # 10 periodos adelante
+plot(predicciones_arima_110)
+#arima 1,0,0,2,1,0,12
+```
